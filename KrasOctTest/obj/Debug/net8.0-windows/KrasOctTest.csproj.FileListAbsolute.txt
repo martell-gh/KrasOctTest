@@ -131,3 +131,7 @@ D:\KrasniyOktyabr\KrasOctTest\KrasOctTest\bin\Debug\net8.0-windows\runtimes\win-
 D:\KrasniyOktyabr\KrasOctTest\KrasOctTest\bin\Debug\net8.0-windows\runtimes\win\lib\net6.0\System.Runtime.Caching.dll
 D:\KrasniyOktyabr\KrasOctTest\KrasOctTest\obj\Debug\net8.0-windows\KrasOctTest.csproj.AssemblyReference.cache
 D:\KrasniyOktyabr\KrasOctTest\KrasOctTest\obj\Debug\net8.0-windows\KrasOctTest.csproj.CopyComplete
+D:\KrasniyOktyabr\KrasOctTest\KrasOctTest\bin\Debug\net8.0-windows\Resources\cross.png
+D:\KrasniyOktyabr\KrasOctTest\KrasOctTest\bin\Debug\net8.0-windows\Resources\file.png
+D:\KrasniyOktyabr\KrasOctTest\KrasOctTest\bin\Debug\net8.0-windows\Resources\plus.png
+D:\KrasniyOktyabr\KrasOctTest\KrasOctTest\bin\Debug\net8.0-windows\Resources\edit.png

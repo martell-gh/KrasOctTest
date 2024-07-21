@@ -1,6 +1,7 @@
 using System;
 using System.Windows.Forms;
 using KrasOctTest.Data;
+using KrasOctTest.Data.Employees;
 using KrasOctTest.Services;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -11,31 +12,25 @@ namespace KrasOctTest
         [STAThread]
         static void Main()
         {
-            // Создаем сервисный провайдер
+
             var serviceProvider = ConfigureServices();
 
-            // Запускаем приложение с основной формой
             Application.SetHighDpiMode(HighDpiMode.SystemAware);
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
             Application.Run(serviceProvider.GetRequiredService<MainForm>());
         }
 
-        // Метод для настройки сервисов
         private static ServiceProvider ConfigureServices()
         {
             var services = new ServiceCollection();
-            services.AddTransient<TreeDbContext>(); 
-            
-            // Регистрируем формы
-            services.AddTransient<MainForm>();
-            services.AddSingleton<IDbContextFactory, DbContextFactory>();
-            
-            //services.AddTransient<DepartmentForm>();
+            services.AddTransient<TreeDbContext>();
+            services.AddTransient<EmployeeDbContext>();
 
-            // Регистрируем другие зависимости
-            //services.AddTransient<DepartmentService>();
-            //services.AddTransient<CompanyContext>();
+            services.AddTransient<MainForm>();
+            services.AddTransient<SearchEmployee>();
+            services.AddSingleton<ITreeDbContextFactory, TreeDbContextFactory>();
+            services.AddSingleton<IEmployeeDbContextFactory, EmployeeDbContextFactory>();
 
             return services.BuildServiceProvider();
         }

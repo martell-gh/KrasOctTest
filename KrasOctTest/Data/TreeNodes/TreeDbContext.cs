@@ -9,25 +9,25 @@ public class TreeDbContext : DbContext
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
-        // Здесь указывается строка подключения к вашей базе данных
         optionsBuilder.UseSqlServer("Server=localhost\\MSSQLSERVER01;Database=master;Trusted_Connection=True;Encrypt=False;");
     }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        // Указываем конфигурацию для таблицы TreeNodes
         modelBuilder.Entity<TreeNodeData>(entity =>
         {
-            entity.ToTable("TreeNodes"); // Указываем имя таблицы
-            entity.HasKey(e => e.Id); // Задаем первичный ключ
+            entity.ToTable("TreeNodes");
+            entity.HasKey(e => e.Id);
+            
+            entity.Property(e => e.Firstname).HasMaxLength(50);
+            entity.Property(e => e.Lastname).HasMaxLength(50);
+            entity.Property(e => e.Patronymic).HasMaxLength(50);
 
-            // Удаляем текущее определение внешнего ключа для ParentNodeId
-            // и явно задаем, что ParentNodeId ссылается на Id таблицы TreeNodes
             entity.HasOne<TreeNodeData>(e => e.ParentNode)
                 .WithMany()
                 .HasForeignKey(e => e.ParentNodeId)
                 .IsRequired(false)
-                .OnDelete(DeleteBehavior.NoAction); // Изменение или удаление не выполняется
+                .OnDelete(DeleteBehavior.NoAction);
         });
     }
     public async Task CascadeDeleteAsync(int nodeId)
@@ -38,7 +38,6 @@ public class TreeDbContext : DbContext
             var allNodes = await TreeNodes.ToListAsync();
             var nodesToDelete = GetDescendants(nodeId, allNodes).ToList();
 
-            // Добавляем сам узел в список узлов для удаления
             nodesToDelete.Add(node);
 
             TreeNodes.RemoveRange(nodesToDelete);
@@ -60,12 +59,10 @@ public class TreeDbContext : DbContext
         return nodesToDelete;
     }
 
-    // Инициализация базы данных и создание узла по умолчанию
     public async Task InitializeDatabase()
     {
         try
         {
-            // Проверяем, создана ли уже таблица TreeNodes
             bool isCreated = Database.EnsureCreated();
 
             if (isCreated)
@@ -76,14 +73,13 @@ public class TreeDbContext : DbContext
             {
                 Console.WriteLine("Таблица TreeNodes уже существует.");
             }
-
-            // Запускаем метод для создания узла по умолчанию
+            
             await TreeNodeData.EnsureDefaultNodeExists(this);
         }
         catch (Exception ex)
         {
             Console.WriteLine("Exception occurred: " + ex.Message);
-            throw; // Перебрасываем исключение для обработки выше по стеку вызовов
+            throw;
         }
     }
 

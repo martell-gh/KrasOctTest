@@ -4,6 +4,7 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using KrasOctTest.Data.Employees;
 using KrasOctTest.Services;
 using Microsoft.EntityFrameworkCore;
 
@@ -12,31 +13,37 @@ namespace KrasOctTest
     public partial class MainForm : Form
     {
         public Node currentNode;
-        private readonly IDbContextFactory _dbContextFactory;
-        private TreeDbContext _dbContext;
+        private readonly ITreeDbContextFactory _treeDbContextFactory;
+        private readonly IEmployeeDbContextFactory _employeeDbContextFactory;
 
-        public MainForm(IDbContextFactory dbContextFactory)
+        private EmployeeDbContext _employeeDbContext;
+        private TreeDbContext _treeDbContext;
+
+        public MainForm(ITreeDbContextFactory treeDbContextFactory, IEmployeeDbContextFactory employeeDbContextFactory)
         {
-            _dbContextFactory = dbContextFactory;
-            _dbContext = _dbContextFactory.CreateDbContext();
+            _treeDbContextFactory = treeDbContextFactory;
+            _employeeDbContextFactory = employeeDbContextFactory;
+            
+            _treeDbContext = _treeDbContextFactory.CreateDbContext();
+            _employeeDbContext = _employeeDbContextFactory.CreateDbContext();
 
             InitializeComponent();
             InitializeDatabase();
             LoadTreeViewFromDatabaseAsync();
+            
         }
 
-        private void InitializeDatabase()
+        private async void InitializeDatabase()
         {
-            _dbContext.InitializeDatabase();
+            await _treeDbContext.InitializeDatabase();
+            await _employeeDbContext.InitializeDatabase();
         }
 
-        private async Task LoadTreeViewFromDatabaseAsync()
+        public async Task LoadTreeViewFromDatabaseAsync()
         {
-            // Создайте новый экземпляр DbContext для этого вызова
-            using (var dbContext = _dbContextFactory.CreateDbContext())
+            using (var dbContext = _treeDbContextFactory.CreateDbContext())
             {
-                treeViewDepartments.Nodes.Clear(); // Очищаем текущие узлы
-                Console.WriteLine("test");
+                treeViewDepartments.Nodes.Clear();
 
                 try
                 {
@@ -48,13 +55,11 @@ namespace KrasOctTest
 
                         await AddChildNodesAsync(rootNode, rootNodeData.Id, dbContext);
                     }
-
-                    // Разворачиваем все узлы
                     treeViewDepartments.ExpandAll();
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine("Exception occurred while loading tree from database: " + ex.Message);
+                    Console.WriteLine("Ошибка: " + ex.Message);
                 }
             }
         }
@@ -69,8 +74,7 @@ namespace KrasOctTest
             {
                 var childNode = ConvertToNode(childNodeData);
                 parentNode.AddChild(childNode);
-
-                // Рекурсивно добавляем дочерние узлы
+                
                 await AddChildNodesAsync(childNode, childNodeData.Id, dbContext);
             }
         }
@@ -81,16 +85,22 @@ namespace KrasOctTest
             return new Node(nodeType, nodeData.Id, nodeData.Name, nodeData.Editable);
         }
 
-        private void TreeViewDepartments_AfterSelect(object sender, TreeViewEventArgs e)
+        private async void TreeViewDepartments_AfterSelect(object sender, TreeViewEventArgs e)
         {
-            Node selectedNode = (Node)e.Node;
+            if (e.Node == null)
+            {
+                return;
+            }
+
+            var selectedNode = (Node)e.Node;
             currentNode = selectedNode;
 
             if (!selectedNode.Editable)
             {
                 panelEmployee.Visible = false;
-                panelDepartment.Visible = false;
-                buttonAddNode.Enabled = true;
+                this.button1.Enabled = true;
+                this.button2.Enabled = false;
+                this.button3.Enabled = false;
                 return;
             }
 
@@ -98,39 +108,143 @@ namespace KrasOctTest
             {
                 case NodeType.EMPLOYEE:
                     panelEmployee.Visible = true;
-                    panelDepartment.Visible = false;
-                    buttonAddNode.Enabled = false;
+                    this.button1.Enabled = false;
+                    this.button2.Enabled = true;
+                    this.button3.Enabled = true;
                     break;
                 case NodeType.DEPARTMENT:
                     panelEmployee.Visible = false;
-                    panelDepartment.Visible = true;
-                    buttonAddNode.Enabled = true;
+                    this.button1.Enabled = true;
+                    this.button2.Enabled = true;
+                    this.button3.Enabled = true;
                     break;
             }
-            
+
+            await UpdateFormFieldsAsync(currentNode);
+        }
+
+        private async Task UpdateFormFieldsAsync(Node selectedNode)
+        {
+            if (selectedNode == null)
+            {
+                return;
+            }
+
+            var node = await _treeDbContext.TreeNodes.FindAsync(selectedNode.NodeId);
+
+            if (node != null)
+            {
+                textBoxFirstName.Text = node.Firstname ?? string.Empty;
+                textBoxLastName.Text = node.Lastname ?? string.Empty;
+                textBoxPatronymic.Text = node.Patronymic ?? string.Empty;
+                dateTimePickerHireDate.Value = node.AcceptedDate ?? DateTime.Now;
+            }
+            else
+            {
+                textBoxFirstName.Clear();
+                textBoxLastName.Clear();
+                textBoxPatronymic.Clear();
+                dateTimePickerHireDate.Value = DateTime.Now;
+            }
+        }
+
+        public async Task UpdateInfo()
+        {
+            if (currentNode == null)
+            {
+                return;
+            }
+
+            try
+            {
+                await TreeNodeData.UpdateNodeFields(
+                    _treeDbContext,
+                    currentNode.NodeId,
+                    textBoxFirstName.Text,
+                    textBoxLastName.Text,
+                    textBoxPatronymic.Text,
+                    dateTimePickerHireDate.Value);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex);
+            }
+        }
+        
+        private async void AnyFieldChanged(object sender, EventArgs e)
+        {
+            await UpdateInfo();
         }
 
         private void ButtonSelect_Click(object sender, EventArgs e)
         {
-            // Логика для обработки нажатия на кнопку "Выбрать"
+            SearchEmployee employees = new SearchEmployee(this, _employeeDbContext, _employeeDbContextFactory);
+            employees.Show();
         }
 
         private void ButtonClear_Click(object sender, EventArgs e)
         {
-            
+            textBoxFirstName.Clear();
+            textBoxLastName.Clear();
+            textBoxPatronymic.Clear();
+            dateTimePickerHireDate.Value = DateTime.Now;
+            UpdateInfo();
         }
 
         private void ButtonAddNode_Click(object sender, EventArgs e)
         {
-            NodeCreateForm newNodeForm = new NodeCreateForm(_dbContext, currentNode);
+            if (currentNode == null) return;
+            NodeCreateForm newNodeForm = new NodeCreateForm(_treeDbContext, currentNode);
             newNodeForm.ShowDialog();
 
         }
 
-        private async void ButtonHideDetails_Click(object sender, EventArgs e)
+        private async void ButtonRemove_Click(object sender, EventArgs e)
         {
-            await _dbContext.CascadeDeleteAsync(currentNode.NodeId);
+            await _treeDbContext.CascadeDeleteAsync(currentNode.NodeId);
             await LoadTreeViewFromDatabaseAsync();
+        }
+        
+        private async void ButtonEdit_Click(object sender, EventArgs e)
+        {
+            RenameForm nameForm = new RenameForm(this, _treeDbContext);
+            nameForm.ShowDialog();
+        }
+        
+        private async Task UpdateHireDateAsync()
+        {
+            if (treeViewDepartments.SelectedNode == null)
+            {
+                MessageBox.Show("Пожалуйста, выберите узел для обновления.");
+                return;
+            }
+
+            int nodeId; 
+            if (!int.TryParse(treeViewDepartments.SelectedNode.Tag.ToString(), out nodeId))
+            {
+                MessageBox.Show("Не удалось получить идентификатор узла.");
+                return;
+            }
+
+            string firstname = textBoxFirstName.Text;
+            string lastname = textBoxLastName.Text;
+            string patronymic = textBoxPatronymic.Text;
+            DateTime hireDate = dateTimePickerHireDate.Value;
+
+            try
+            {
+                await TreeNodeData.UpdateNodeFields(_treeDbContext, nodeId, firstname, lastname, patronymic, hireDate);
+                MessageBox.Show("Дата принятия успешно обновлена.");
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Ошибка при обновлении даты принятия: " + ex);
+            }
+        }
+
+        private void DateTimePickerHireDate_ValueChanged(object sender, EventArgs e)
+        {
+            UpdateHireDateAsync();
         }
     }
 }

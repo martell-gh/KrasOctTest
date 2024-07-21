@@ -30,20 +30,14 @@ public partial class NodeCreateForm : Form
             this.buttonOK = new Button();
             this.buttonCancel = new Button();
             this.SuspendLayout();
-            
-            // 
-            // label1
-            // 
+
             this.label1.AutoSize = true;
             this.label1.Location = new System.Drawing.Point(12, 15);
             this.label1.Name = "label1";
             this.label1.Size = new System.Drawing.Size(56, 13);
             this.label1.TabIndex = 0;
             this.label1.Text = "Тип ветки";
-            
-            // 
-            // comboBox1
-            // 
+
             this.comboBox1.DropDownStyle = ComboBoxStyle.DropDownList;
             this.comboBox1.FormattingEnabled = true;
             this.comboBox1.Items.AddRange(new object[] {
@@ -53,28 +47,19 @@ public partial class NodeCreateForm : Form
             this.comboBox1.Name = "comboBox1";
             this.comboBox1.Size = new System.Drawing.Size(172, 21);
             this.comboBox1.TabIndex = 1;
-            
-            // 
-            // label2
-            // 
+
             this.label2.AutoSize = true;
             this.label2.Location = new System.Drawing.Point(12, 42);
             this.label2.Name = "label2";
             this.label2.Size = new System.Drawing.Size(74, 13);
             this.label2.TabIndex = 2;
             this.label2.Text = "Наименование";
-            
-            // 
-            // textBox1
-            // 
+
             this.textBox1.Location = new System.Drawing.Point(100, 39);
             this.textBox1.Name = "textBox1";
             this.textBox1.Size = new System.Drawing.Size(172, 20);
             this.textBox1.TabIndex = 3;
-            
-            // 
-            // buttonOK
-            // 
+
             this.buttonOK.Location = new System.Drawing.Point(116, 65);
             this.buttonOK.Name = "buttonOK";
             this.buttonOK.Size = new System.Drawing.Size(75, 23);
@@ -82,10 +67,7 @@ public partial class NodeCreateForm : Form
             this.buttonOK.Text = "OK";
             this.buttonOK.UseVisualStyleBackColor = true;
             this.buttonOK.Click += new System.EventHandler(this.buttonOK_Click);
-            
-            // 
-            // buttonCancel
-            // 
+
             this.buttonCancel.Location = new System.Drawing.Point(197, 65);
             this.buttonCancel.Name = "buttonCancel";
             this.buttonCancel.Size = new System.Drawing.Size(75, 23);
@@ -93,10 +75,7 @@ public partial class NodeCreateForm : Form
             this.buttonCancel.Text = "Отмена";
             this.buttonCancel.UseVisualStyleBackColor = true;
             this.buttonCancel.Click += new System.EventHandler(this.buttonCancel_Click);
-            
-            // 
-            // NewNodeForm
-            // 
+
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(284, 101);
@@ -114,9 +93,17 @@ public partial class NodeCreateForm : Form
 
     private void buttonOK_Click(object sender, EventArgs e)
     {
-        Console.WriteLine($"CREATE {(NodeType)this.comboBox1.SelectedIndex} with name {this.textBox1.Text}");
+        if (this.textBox1.Text == "")
+        {
+            MessageBox.Show("Введите наименование", "Внимание", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            return;
+        } else if (this.comboBox1.SelectedIndex == -1)
+        {
+            MessageBox.Show("Выберите тип ветки", "Внимание", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            return;
+        }
         TreeNodeData.CreateNode(_dbContext, this.textBox1.Text, currentNode, (NodeType)this.comboBox1.SelectedIndex);
-        Console.WriteLine("CREATED!!!");
+        
         this.Close();
     }
 

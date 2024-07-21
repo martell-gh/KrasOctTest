@@ -26,6 +26,34 @@
       <Compile Update="NodeCreateForm.cs">
         <SubType>Form</SubType>
       </Compile>
+      <Compile Update="SearchEmployee.cs">
+        <SubType>Form</SubType>
+      </Compile>
+      <Compile Update="InputForm.cs">
+        <SubType>Form</SubType>
+      </Compile>
+      <Compile Update="RenameForm.cs">
+        <SubType>Form</SubType>
+      </Compile>
+    </ItemGroup>
+
+    <ItemGroup>
+      <None Remove="Resources\cross.png" />
+      <Content Include="Resources\cross.png">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
+      <None Remove="Resources\file.png" />
+      <Content Include="Resources\file.png">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
+      <None Remove="Resources\plus.png" />
+      <Content Include="Resources\plus.png">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
+      <None Remove="Resources\edit.png" />
+      <Content Include="Resources\edit.png">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
     </ItemGroup>
 
 </Project>

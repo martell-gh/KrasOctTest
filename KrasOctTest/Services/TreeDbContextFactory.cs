@@ -3,16 +3,16 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace KrasOctTest.Services;
 
-public interface IDbContextFactory
+public interface ITreeDbContextFactory
 {
     TreeDbContext CreateDbContext();
 }
 
-public class DbContextFactory : IDbContextFactory
+public class TreeDbContextFactory : ITreeDbContextFactory
 {
     private readonly IServiceProvider _serviceProvider;
 
-    public DbContextFactory(IServiceProvider serviceProvider)
+    public TreeDbContextFactory(IServiceProvider serviceProvider)
     {
         _serviceProvider = serviceProvider;
     }
