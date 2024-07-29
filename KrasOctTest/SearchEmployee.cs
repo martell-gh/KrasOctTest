@@ -1,17 +1,20 @@
 ﻿using System;
 using System.Windows.Forms;
+using KrasOctTest.Data;
 using KrasOctTest.Data.Employees;
 using KrasOctTest.Services;
 using KrasOctTest.TreeComponents;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace KrasOctTest
 {
     public partial class SearchEmployee : Form
     {
+        private readonly IServiceProvider _serviceProvider;
+        private readonly IEmployeeRepository _employeeRepository;
+        
         private DataGridViewRow _selectedRow;
-        private EmployeeDbContext _dbContext;
-        private IEmployeeDbContextFactory _employeeDbContextFactory;
         
         private string _oldLastName;
         private string _oldFirstName;
@@ -20,11 +23,11 @@ namespace KrasOctTest
 
         private MainForm _mainForm;
 
-        public SearchEmployee(MainForm form, EmployeeDbContext dbContext, IEmployeeDbContextFactory employeeDbContextFactory)
+        public SearchEmployee(MainForm form, IServiceProvider serviceProvider, IEmployeeRepository employeeRepository)
         {
-            _dbContext = dbContext;
-            _employeeDbContextFactory = employeeDbContextFactory;
             _mainForm = form;
+            _serviceProvider = serviceProvider;
+            _employeeRepository = employeeRepository;
             
             InitializeComponent();
             LoadEmployeesToDataGridViewAsync();
@@ -37,10 +40,10 @@ namespace KrasOctTest
         }
         private void ShowInputForm()
         {
-            var inputForm = new InputForm(_dbContext, dataGridView1);
+            var inputForm = _serviceProvider.GetRequiredService<InputForm>();
+
             inputForm.ShowDialog();
         }
-
         
         private void DataGridView1_CellBeginEdit(object sender, DataGridViewCellCancelEventArgs e)
         {
@@ -64,38 +67,7 @@ namespace KrasOctTest
                 var newFirstName = row.Cells["ColumnFirstName"].Value.ToString();
                 var newPatronymic = row.Cells["ColumnPatronymic"].Value.ToString();
 
-                await UpdateEmployeeInDatabase(_oldLastName, _oldFirstName, _oldPatronymic, newLastName, newFirstName, newPatronymic);
-            }
-        }
-
-        private async Task UpdateEmployeeInDatabase(string oldLastName, string oldFirstName, string oldPatronymic, string newLastName, string newFirstName, string newPatronymic)
-        {
-            try
-            {
-                using (var context = _employeeDbContextFactory.CreateDbContext())
-                {
-                    var employee = await context.Employees
-                        .FirstOrDefaultAsync(e => e.Lastname == oldLastName && e.Firstname == oldFirstName && e.Patronymic == oldPatronymic);
-
-                    if (employee != null)
-                    {
-                        employee.Lastname = newLastName;
-                        employee.Firstname = newFirstName;
-                        employee.Patronymic = newPatronymic;
-
-                        context.Employees.Update(employee);
-                        await context.SaveChangesAsync();
-                    }
-                    else
-                    {
-                        MessageBox.Show("Сотрудник не найден.");
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Ошибка: {ex}");
-                Console.WriteLine(ex);
+                await _employeeRepository.UpdateEmployeeInDatabase(_oldLastName, _oldFirstName, _oldPatronymic, newLastName, newFirstName, newPatronymic);
             }
         }
         
@@ -156,12 +128,14 @@ namespace KrasOctTest
             ShowInputForm();
         }
 
-        private void toolStripButton2_Click(object sender, EventArgs e)
+        private async void toolStripButton2_Click(object sender, EventArgs e)
         {
             _mainForm.textBoxFirstName.Text = _selectedRow.Cells["ColumnLastName"].Value.ToString();
             _mainForm.textBoxLastName.Text = _selectedRow.Cells["ColumnFirstName"].Value.ToString();
             _mainForm.textBoxPatronymic.Text = _selectedRow.Cells["ColumnPatronymic"].Value.ToString();
-            _mainForm.UpdateInfo();
+            await _mainForm.UpdateInfo();
+
+            DialogResult = DialogResult.OK;
 
             this.Close();
         }
@@ -174,18 +148,8 @@ namespace KrasOctTest
 
             try
             {
-                await _dbContext.DeleteEmployee(lastName, firstName, patronymic);
-                
-                foreach (DataGridViewRow row in dataGridView1.Rows)
-                {
-                    if (row.Cells["ColumnLastName"].Value.ToString() == lastName &&
-                        row.Cells["ColumnFirstName"].Value.ToString() == firstName &&
-                        row.Cells["ColumnPatronymic"].Value.ToString() == patronymic)
-                    {
-                        dataGridView1.Rows.Remove(row);
-                        break;
-                    }
-                }
+                await _employeeRepository.DeleteEmployee(lastName, firstName, patronymic);
+                LoadEmployeesToDataGridViewAsync();
             }
             catch (Exception ex)
             {
@@ -193,18 +157,12 @@ namespace KrasOctTest
             }
         }
         
-        public async Task<List<EmployeeData>> GetEmployeesAsync()
-        {
-            using (var context = _employeeDbContextFactory.CreateDbContext())
-            {
-                return await context.Employees.ToListAsync();
-            }
-        }
-        private async Task LoadEmployeesToDataGridViewAsync()
+        
+        public async Task LoadEmployeesToDataGridViewAsync()
         {
             try
             {
-                var employees = await GetEmployeesAsync();
+                var employees = await _employeeRepository.GetEmployeesAsync();
 
                 dataGridView1.Rows.Clear();
 

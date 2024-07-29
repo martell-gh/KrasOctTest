@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "D:\\KrasniyOktyabr\\KrasOctTest\\KrasOctTest\\KrasOctTest.csproj": {}
+    "D:\\sharpprojects\\KrasOctTest\\KrasOctTest\\KrasOctTest.csproj": {}
   },
   "projects": {
-    "D:\\KrasniyOktyabr\\KrasOctTest\\KrasOctTest\\KrasOctTest.csproj": {
+    "D:\\sharpprojects\\KrasOctTest\\KrasOctTest\\KrasOctTest.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "D:\\KrasniyOktyabr\\KrasOctTest\\KrasOctTest\\KrasOctTest.csproj",
+        "projectUniqueName": "D:\\sharpprojects\\KrasOctTest\\KrasOctTest\\KrasOctTest.csproj",
         "projectName": "KrasOctTest",
-        "projectPath": "D:\\KrasniyOktyabr\\KrasOctTest\\KrasOctTest\\KrasOctTest.csproj",
+        "projectPath": "D:\\sharpprojects\\KrasOctTest\\KrasOctTest\\KrasOctTest.csproj",
         "packagesPath": "C:\\Users\\user\\.nuget\\packages\\",
-        "outputPath": "D:\\KrasniyOktyabr\\KrasOctTest\\KrasOctTest\\obj\\",
+        "outputPath": "D:\\sharpprojects\\KrasOctTest\\KrasOctTest\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
           "C:\\Users\\user\\AppData\\Roaming\\NuGet\\NuGet.Config",

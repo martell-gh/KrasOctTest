@@ -7,64 +7,66 @@ using System.Windows.Forms;
 using KrasOctTest.Data.Employees;
 using KrasOctTest.Services;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace KrasOctTest
 {
     public partial class MainForm : Form
     {
-        public Node currentNode;
-        private readonly ITreeDbContextFactory _treeDbContextFactory;
-        private readonly IEmployeeDbContextFactory _employeeDbContextFactory;
+        private readonly IServiceProvider _serviceProvider;
+        
+        public Node CurrentNode;
+        private readonly IDbContextFactory _dbContextFactory;
+        private readonly ITreeNodeRepository _treeNodeRepository;
+        private readonly INodeService _nodeService;
+        
+        private ApplicationDbContext _dbContext;
 
-        private EmployeeDbContext _employeeDbContext;
-        private TreeDbContext _treeDbContext;
-
-        public MainForm(ITreeDbContextFactory treeDbContextFactory, IEmployeeDbContextFactory employeeDbContextFactory)
+        public MainForm(IDbContextFactory dbContextFactory, ITreeNodeRepository treeNodeRepository, INodeService nodeService, IServiceProvider serviceProvider)
         {
-            _treeDbContextFactory = treeDbContextFactory;
-            _employeeDbContextFactory = employeeDbContextFactory;
+            _dbContextFactory = dbContextFactory;
+            _serviceProvider = serviceProvider;
+            _treeNodeRepository = treeNodeRepository;
+            _nodeService = nodeService;
             
-            _treeDbContext = _treeDbContextFactory.CreateDbContext();
-            _employeeDbContext = _employeeDbContextFactory.CreateDbContext();
+            _dbContext = _dbContextFactory.CreateDbContext();
 
-            InitializeComponent();
             InitializeDatabase();
+            
+            InitializeComponent();
             LoadTreeViewFromDatabaseAsync();
             
         }
 
-        private async void InitializeDatabase()
+        private async Task<bool> InitializeDatabase()
         {
-            await _treeDbContext.InitializeDatabase();
-            await _employeeDbContext.InitializeDatabase();
+            var initialized = await _dbContext.InitializeDatabase();
+            return initialized;
         }
 
         public async Task LoadTreeViewFromDatabaseAsync()
         {
-            using (var dbContext = _treeDbContextFactory.CreateDbContext())
+            treeViewDepartments.Nodes.Clear();
+
+            try
             {
-                treeViewDepartments.Nodes.Clear();
-
-                try
+                var rootNodeData = await _dbContext.TreeNodes.FirstOrDefaultAsync(node => node.ParentNodeId == null);
+                if (rootNodeData != null)
                 {
-                    var rootNodeData = await dbContext.TreeNodes.FirstOrDefaultAsync(node => node.ParentNodeId == null);
-                    if (rootNodeData != null)
-                    {
-                        var rootNode = ConvertToNode(rootNodeData);
-                        treeViewDepartments.Nodes.Add(rootNode);
+                    var rootNode = ConvertToNode(rootNodeData);
+                    treeViewDepartments.Nodes.Add(rootNode);
 
-                        await AddChildNodesAsync(rootNode, rootNodeData.Id, dbContext);
-                    }
-                    treeViewDepartments.ExpandAll();
+                    await AddChildNodesAsync(rootNode, rootNodeData.Id, _dbContext);
                 }
-                catch (Exception ex)
-                {
-                    Console.WriteLine("Ошибка: " + ex.Message);
-                }
+                treeViewDepartments.ExpandAll();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Ошибка: " + ex);
             }
         }
 
-        private async Task AddChildNodesAsync(Node parentNode, int parentId, TreeDbContext dbContext)
+        private async Task AddChildNodesAsync(Node parentNode, int parentId, ApplicationDbContext dbContext)
         {
             var childNodesData = await dbContext.TreeNodes
                 .Where(node => node.ParentNodeId == parentId)
@@ -73,7 +75,7 @@ namespace KrasOctTest
             foreach (var childNodeData in childNodesData)
             {
                 var childNode = ConvertToNode(childNodeData);
-                parentNode.AddChild(childNode);
+                _nodeService.AddChildToNode(parentNode, childNode);
                 
                 await AddChildNodesAsync(childNode, childNodeData.Id, dbContext);
             }
@@ -93,7 +95,7 @@ namespace KrasOctTest
             }
 
             var selectedNode = (Node)e.Node;
-            currentNode = selectedNode;
+            CurrentNode = selectedNode;
 
             if (!selectedNode.Editable)
             {
@@ -120,7 +122,7 @@ namespace KrasOctTest
                     break;
             }
 
-            await UpdateFormFieldsAsync(currentNode);
+            await UpdateFormFieldsAsync(CurrentNode);
         }
 
         private async Task UpdateFormFieldsAsync(Node selectedNode)
@@ -130,7 +132,7 @@ namespace KrasOctTest
                 return;
             }
 
-            var node = await _treeDbContext.TreeNodes.FindAsync(selectedNode.NodeId);
+            var node = await _dbContext.TreeNodes.FindAsync(selectedNode.NodeId);
 
             if (node != null)
             {
@@ -150,16 +152,15 @@ namespace KrasOctTest
 
         public async Task UpdateInfo()
         {
-            if (currentNode == null)
+            if (CurrentNode == null)
             {
                 return;
             }
 
             try
             {
-                await TreeNodeData.UpdateNodeFields(
-                    _treeDbContext,
-                    currentNode.NodeId,
+                await _treeNodeRepository.UpdateNodeFields(
+                    CurrentNode.NodeId,
                     textBoxFirstName.Text,
                     textBoxLastName.Text,
                     textBoxPatronymic.Text,
@@ -176,10 +177,15 @@ namespace KrasOctTest
             await UpdateInfo();
         }
 
-        private void ButtonSelect_Click(object sender, EventArgs e)
+        private async void ButtonSelect_Click(object sender, EventArgs e)
         {
-            SearchEmployee employees = new SearchEmployee(this, _employeeDbContext, _employeeDbContextFactory);
-            employees.Show();
+            var employeesForm = _serviceProvider.GetRequiredService<SearchEmployee>();
+
+            employeesForm.ShowDialog();
+            if (employeesForm.DialogResult == DialogResult.OK)
+            {
+                await LoadTreeViewFromDatabaseAsync();
+            }
         }
 
         private void ButtonClear_Click(object sender, EventArgs e)
@@ -191,23 +197,26 @@ namespace KrasOctTest
             UpdateInfo();
         }
 
-        private void ButtonAddNode_Click(object sender, EventArgs e)
+        private async void ButtonAddNode_Click(object sender, EventArgs e)
         {
-            if (currentNode == null) return;
-            NodeCreateForm newNodeForm = new NodeCreateForm(_treeDbContext, currentNode);
+            if (CurrentNode == null) return;
+            NodeCreateForm newNodeForm = _serviceProvider.GetRequiredService<NodeCreateForm>();
             newNodeForm.ShowDialog();
-
+            if (newNodeForm.DialogResult == DialogResult.OK)
+            {
+                await LoadTreeViewFromDatabaseAsync();
+            }
         }
 
         private async void ButtonRemove_Click(object sender, EventArgs e)
         {
-            await _treeDbContext.CascadeDeleteAsync(currentNode.NodeId);
+            await _dbContext.CascadeDeleteAsync(CurrentNode.NodeId);
             await LoadTreeViewFromDatabaseAsync();
         }
         
         private async void ButtonEdit_Click(object sender, EventArgs e)
         {
-            RenameForm nameForm = new RenameForm(this, _treeDbContext);
+            RenameForm nameForm = new RenameForm(this, _dbContext);
             nameForm.ShowDialog();
         }
         
@@ -233,7 +242,7 @@ namespace KrasOctTest
 
             try
             {
-                await TreeNodeData.UpdateNodeFields(_treeDbContext, nodeId, firstname, lastname, patronymic, hireDate);
+                await _treeNodeRepository.UpdateNodeFields(nodeId, firstname, lastname, patronymic, hireDate);
                 MessageBox.Show("Дата принятия успешно обновлена.");
             }
             catch (Exception ex)

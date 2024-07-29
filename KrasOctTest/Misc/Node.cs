@@ -1,5 +1,4 @@
 ﻿
-
 namespace KrasOctTest.TreeComponents;
 
 public class Node : TreeNode
@@ -13,19 +12,4 @@ public class Node : TreeNode
         Editable = canEdit;
         NodeId = id;
     }
-
-    public void AddChild(Node node)
-    {
-        if (this.NodeType == NodeType.EMPLOYEE)
-        {
-            throw new ArgumentException("Невозможно добавить дочерний узел сотруднику!");
-        }
-    
-        base.Nodes.Add(node);
-    }
-}
-
-public enum NodeType
-{
-    EMPLOYEE, DEPARTMENT
 }

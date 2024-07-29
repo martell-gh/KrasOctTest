@@ -2,19 +2,28 @@
 using System.Windows.Forms;
 using KrasOctTest.Data;
 using KrasOctTest.TreeComponents;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace KrasOctTest;
 
 public partial class NodeCreateForm : Form
 {
-    public Node currentNode;
-    private TreeDbContext _dbContext;
+    private Node _currentNode;
+  
+    private ITreeNodeRepository _treeNodeRepository;
     
-    public NodeCreateForm(TreeDbContext dbContext, Node currentSelected)
+    private Label label1;
+    private ComboBox comboBox1;
+    private Label label2;
+    private TextBox textBox1;
+    private Button buttonOK;
+    private Button buttonCancel;
+    
+    public NodeCreateForm(ITreeNodeRepository treeNodeRepository, MainForm mainForm)
     {
-        currentNode = currentSelected;
-        _dbContext = dbContext;
+        _treeNodeRepository = treeNodeRepository;
         InitializeComponent();
+        _currentNode = mainForm.CurrentNode;
         
         this.FormBorderStyle = FormBorderStyle.FixedDialog;
         this.MaximizeBox = false;
@@ -97,25 +106,23 @@ public partial class NodeCreateForm : Form
         {
             MessageBox.Show("Введите наименование", "Внимание", MessageBoxButtons.OK, MessageBoxIcon.Warning);
             return;
-        } else if (this.comboBox1.SelectedIndex == -1)
+        } 
+        if (this.comboBox1.SelectedIndex == -1)
         {
             MessageBox.Show("Выберите тип ветки", "Внимание", MessageBoxButtons.OK, MessageBoxIcon.Warning);
             return;
         }
-        TreeNodeData.CreateNode(_dbContext, this.textBox1.Text, currentNode, (NodeType)this.comboBox1.SelectedIndex);
+        _treeNodeRepository.CreateNode(this.textBox1.Text, _currentNode, (NodeType)this.comboBox1.SelectedIndex);
         
+        this.DialogResult = DialogResult.OK;
         this.Close();
     }
 
     private void buttonCancel_Click(object sender, EventArgs e)
     { 
+        this.DialogResult = DialogResult.Cancel;
         this.Close();
     }
 
-    private Label label1;
-    private ComboBox comboBox1;
-    private Label label2;
-    private TextBox textBox1;
-    private Button buttonOK;
-    private Button buttonCancel;
+
 }

@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "t+L7N9PsfADJazIwFd7qy9Lell3XMdNerNZMOkn2rMX+RIg+/1XUBYt+2g8x7wH2Yx19X6qLNBx998kkNYe8ww==",
+  "dgSpecHash": "Y/aWemkSM2WNOy3Fvo69jP8ft1T1WwCm0l+Mo1/2557Boao7jPKmbLmaepe1qavflcuInGOka/RiWLY/ojTWUQ==",
   "success": true,
-  "projectFilePath": "D:\\KrasniyOktyabr\\KrasOctTest\\KrasOctTest\\KrasOctTest.csproj",
+  "projectFilePath": "D:\\sharpprojects\\KrasOctTest\\KrasOctTest\\KrasOctTest.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\user\\.nuget\\packages\\automapper\\13.0.1\\automapper.13.0.1.nupkg.sha512",
     "C:\\Users\\user\\.nuget\\packages\\automapper.extensions.microsoft.dependencyinjection\\12.0.1\\automapper.extensions.microsoft.dependencyinjection.12.0.1.nupkg.sha512",

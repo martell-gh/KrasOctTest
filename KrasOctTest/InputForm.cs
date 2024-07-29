@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Windows.Forms;
+using KrasOctTest.Data;
 using KrasOctTest.Data.Employees;
 
 namespace KrasOctTest
@@ -10,20 +11,24 @@ namespace KrasOctTest
         public string LastName { get; private set; }
         public string Patronymic { get; private set; }
 
-        private EmployeeDbContext _dbContext;
+        private IEmployeeRepository _employeeRepository;
+        private SearchEmployee _searchEmployeeWindow;
+        
+        private ApplicationDbContext _dbContext;
         private DataGridView _dataGridView;
         
-        public InputForm(EmployeeDbContext dbContext, DataGridView dataGridView)
+        public InputForm(IEmployeeRepository employeeRepository, SearchEmployee searchEmployeeWindow)
         {
-            _dbContext = dbContext;
-            _dataGridView = dataGridView;
+            _employeeRepository = employeeRepository;
+            _searchEmployeeWindow = searchEmployeeWindow;
             
             InitializeComponent();
         }
 
-        private void buttonOk_Click(object sender, EventArgs e)
+        private async void buttonOk_Click(object sender, EventArgs e)
         {
-            _dbContext.CreateEmployee(_dataGridView, textBoxFirstName.Text, textBoxLastName.Text, textBoxPatronymic.Text);
+            await _employeeRepository.CreateEmployee(textBoxFirstName.Text, textBoxLastName.Text, textBoxPatronymic.Text);
+            await _searchEmployeeWindow.LoadEmployeesToDataGridViewAsync();
             
             this.Close();
         }

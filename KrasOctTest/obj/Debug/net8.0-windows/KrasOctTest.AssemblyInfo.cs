@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("KrasOctTest")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+b367d3e13bab1d25a47bec793b1c1aa0edeb76a9")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+b8af9590090b0f3a04273f88c4aabeb88663731c")]
 [assembly: System.Reflection.AssemblyProductAttribute("KrasOctTest")]
 [assembly: System.Reflection.AssemblyTitleAttribute("KrasOctTest")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
